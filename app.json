@@ -3,5 +3,6 @@
 		"nlu": {
 			"name": "alexa"
 		}
-	}
+	},
+	"endpoint": "https://webhook.jovo.cloud/a208e865-c254-4d33-ad49-9bebe968278f"
 }

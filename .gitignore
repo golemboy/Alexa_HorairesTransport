@@ -63,3 +63,4 @@ typings/
 db/
 platforms/
 models/fr-FR.json
+*.zip

@@ -8,9 +8,21 @@ const {App} = require('jovo-framework');
 const ratp = require('./ratp_calls');
 const tools = require('./tools');
 const config = {
-    logging: true,
+    logging: false,
+    saveUserOnResponseEnabled: true,
+    userDataCol: 'userData',
+
+    intentMap: {
+        'AMAZON.RepeatIntent': 'RepeatIntent',
+    },
+
+    db: {
+        type: 'dynamodb',
+        tableName: 'HoraireTransportData',
+    },
 };
 
+//go
 const app = new App(config);
 
 
@@ -23,19 +35,24 @@ app.setHandler({
         this.ask('Voulez vous avoir les horaires ?');
 
     },
+
+    'RepeatIntent': function()  {
+        
+        let userData  = this.user().data
+        
+        if ( userData !== undefined  
+            && !tools.isEmpty(userData)
+            && !userData.HorairesData.error ) {            
+            this.toIntent('HorairesApiIntent', userData.HorairesData);
+        }
+        else {
+            this.toIntent('LAUNCH');
+        }
+    },
+
     'HorairesIntent': function(type, code, station) {
         if (!this.alexaSkill().isDialogCompleted()) {
-            this.alexaSkill().dialogDelegate();
-
-        } else if (!this.alexaSkill().hasSlotValue('type')) {
-            this.alexaSkill().dialogElicitSlot('type', 'quel type de transport s\'il vous plait ?');        
-
-        } else if (!this.alexaSkill().hasSlotValue('code')) {
-            this.alexaSkill().dialogElicitSlot('code', 'quelle {type} s\'il vous plait ?');
-
-        } else if (!this.alexaSkill().hasSlotValue('station')) {
-            this.alexaSkill().dialogElicitSlot('station', 'quel arrêt s\'il vous plait ?');
-
+            this.alexaSkill().dialogDelegate()
             
         } else if (this.alexaSkill().getIntentConfirmationStatus() !== 'CONFIRMED') {
             
@@ -52,32 +69,31 @@ app.setHandler({
             let HorairesData = {
                 type: type,
                 code: code,
-                station: station,                
+                station: station,
+                error: true                
             };
             this.toIntent('HorairesApiIntent', HorairesData);
         }
     },
     'HorairesApiIntent': function(HorairesData) {
-        
-        // console.log("---------------------------------------")
-        // console.log("LA")
-        // console.log(HorairesData.station.alexaSkill.resolutions.resolutionsPerAuthority)
-        // console.log("---------------------------------------")
 
-        let station = HorairesData.station.alexaSkill.resolutions.resolutionsPerAuthority[0].values[0].value.id;
-        //console.log("HorairesData " +HorairesData.type);
+        let station = HorairesData.station.alexaSkill.resolutions.resolutionsPerAuthority[0].values[0].value.id
 
         ratp.call_schedules(HorairesData.type.value, HorairesData.code.value, station, 'A' )        
         .then ((output) => {
-            console.log(output);
             this.tell(tools.display(output))
-            //this.tell('<speak>destination '+output[0].destination+' dans '+tools.translate(output[0].message)+',<break time="1s"/> destination '+output[1].destination+' dans '+tools.translate(output[1].message)+'.</speak>');
+            
+            HorairesData.error = false
+            this.user().data.HorairesData = HorairesData
             
         }
         ).catch((error) => {
             this.tell(tools.display(error))
+
+            HorairesData.error = true
+            this.user().data.HorairesData = HorairesData
+
         })
-        //this.tell('c\'est pret, merci !');
     },
 });
 

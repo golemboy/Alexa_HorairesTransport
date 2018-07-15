@@ -35,9 +35,11 @@ var translate = (value) => {
 module.exports.display = (output) => {
   let result = '<speak>'
   
-  // output.forEach(element => {
-    
-  // });
+  /*
+  [ { message: 'SERVICE', destination: 'Chatelet' },
+  { message: 'NON COMMENCE', destination: 'Chatelet' } ]
+
+   */
   
   for(let i = 0; i<output.length;i++) {
     let element = output[i]
@@ -45,6 +47,24 @@ module.exports.display = (output) => {
       result += 'destination '+element.destination+' : service terminé.'
       break;
     }
+
+    else if (element.message === 'ARRET NON DESSERVI'){
+      result += 'destination '+element.destination+' : arrêt non desservi'
+      break;
+    }
+
+    else if (element.message === 'INTERROMPU'){
+      result += 'destination '+element.destination+' : interrompu'
+      break;
+    }
+
+    else if (element.message === 'SERVICE'){
+      result += 'service '
+    }
+    else if (element.message === 'NON COMMENCE'){
+      result += 'non commencé'
+    }
+
     else {
       result += 'destination '+element.destination+' dans '+translate(element.message)+'<break time="1s"/>'
     }
@@ -65,4 +85,13 @@ module.exports.send_error = (error,memory) => {
       }
 
       return response
+}
+
+
+module.exports.isEmpty = (obj) => {
+  for(var key in obj) {
+      if(obj.hasOwnProperty(key))
+          return false
+  }
+  return true
 }
